@@ -1,0 +1,12 @@
+name: springbok_db_http
+version: 0.0.1
+author: Christophe Hurpeau <christophe@hurpeau.com>
+description: Springbok DB API with HTTP for Browsers
+homepage: https://github.com/christophehurpeau/dart-springbok_db_http
+documentation: https://github.com/christophehurpeau/dart-springbok_db_http/wiki
+environment:
+  sdk: '>=1.0.0 <2.0.0'
+dependencies:
+  springbok_db:
+    path: ../springbok_db/
+  unittest: '>=0.9.0 <0.10.0'
