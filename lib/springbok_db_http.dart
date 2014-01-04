@@ -10,7 +10,7 @@ export 'package:springbok_db/springbok_db.dart';
 
 part 'src/cursor.dart';
 
-springbokDbMongoInit() {
+springbokDbHttpInit() {
   Db.stringToStore['http'] = (Map config) => new HttpStore(config['uri']);
 }
 
@@ -43,44 +43,51 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
   
   T toModel(Map result) => result == null ? null : model$.createInstance(result);
   
-  Future makeRequest(String method, dynamic data) {
-    return HttpRequest.request('${store.uri}/${model$.storeKey}',
-        method: method,
-        responseType: 'json',
-        sendData: JSON.encode(data))
-      .then((HttpRequest request) {
-        if (request.status != 200) {
-          throw new Exception('Status != 200: ${request.status} ${request.statusText} - ${request.responseText}');
-        }
-        return JSON.decode(request.responseText);
-      });
+  Future makeRequest(String method, Map params, dynamic data) {
+    if (params != null) {
+      params.forEach((k, v) => params[k] = JSON.encode(v));
+    }
     
+    var uri = new Uri(
+      path: '${store.uri}/${model$.storeKey}',
+      queryParameters: params
+    );
+    return HttpRequest.request(uri.toString(),
+      method: method,
+      //responseType: 'json',
+      sendData: data == null ? null : JSON.encode(data))
+    .then((HttpRequest request) {
+      if (request.status != 200) {
+        throw new Exception('Status != 200: ${request.status} ${request.statusText} - ${request.responseText}');
+      }
+      return JSON.decode(request.response);
+    });
   }
   
   Future<HttpCursor<T>> cursor([criteria])
     => new Future.value(new HttpCursor(this, criteria));
-  Future<int> count([criteria]) => makeRequest('GET', { count: true, criteria: criteria });
+  Future<int> count([criteria]) => makeRequest('GET', { 'count': true, 'criteria': criteria }, null);
   Future<List> distinct(String field, [criteria])
-    => makeRequest('get', { distinct: field, criteria: criteria });
+    => makeRequest('get', { 'distinct': field, 'criteria': criteria }, null);
 
   
   Future insert(Map values)
-    => makeRequest('PUT', [ false, values ]);
+    => makeRequest('PUT', null, [ false, values ]);
   Future insertAll(List<Map> values)
-    => makeRequest('PUT', [ false, values ]);
+    => makeRequest('PUT', null, [ false, values ]);
 
   Future update(criteria, Map values)
-    => makeRequest('POST', [ true, criteria, values ]);
+    => makeRequest('POST', null, [ true, criteria, values ]);
   Future updateOne(criteria, Map values) 
-    => makeRequest('POST', [ false, criteria, values ]);
+    => makeRequest('POST', null, [ false, criteria, values ]);
   
   Future save(Map values)
-  => makeRequest('PUT', [ true, values ]);
+  => makeRequest('PUT', null, [ true, values ]);
   
   Future remove(criteria)
-    => makeRequest('DELETE', [ true, criteria ]);
+    => makeRequest('DELETE', null, [ true, criteria ]);
   Future removeOne(criteria)
-    => makeRequest('DELETE', [ false, criteria ]);
+    => makeRequest('DELETE', null, [ false, criteria ]);
   
 }
 
