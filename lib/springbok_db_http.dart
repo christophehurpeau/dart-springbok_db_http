@@ -28,10 +28,10 @@ class HttpStore extends AbstractStore<HttpStoreInstance> {
 }
 
 class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
-  static final Converters _converter = new Converters({
-    reflectClass(Model): const ModelConverter(), //Not the store version, because we send it to the server
-    reflectClass(List): const ListConverter(),
-  });
+  static final Map _converterRules = {
+    reflectClass(List): const ListConverterRule(),
+    reflectClass(Model): const ModelToMapRule(),
+  };
   
   final HttpStore store;
   
@@ -39,9 +39,10 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
     super(model$),
     this.store = store;
   
-  Converters get converter => _converter;
-  
-  T toModel(Map result) => result == null ? null : model$.createInstance(result);
+  Map get converterRules => _converterRules;
+
+  T toModel(Map result) => result == null ? null : model$.mapToInstance(result);
+  Map instanceToStoreMapResult(Map result) => model$.instanceToMap(result);
   
   Future makeRequest(String method, Map params, dynamic data) {
     if (params != null) {
