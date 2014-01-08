@@ -9,6 +9,7 @@ import 'package:springbok_db/springbok_db.dart';
 export 'package:springbok_db/springbok_db.dart';
 
 part 'src/cursor.dart';
+part 'src/criteria.dart';
 
 springbokDbHttpInit() {
   Db.stringToStore['http'] = (Map config) => new HttpStore(config['uri']);
@@ -29,7 +30,6 @@ class HttpStore extends AbstractStore<HttpStoreInstance> {
 
 class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
   static final Map _converterRules = {
-    reflectClass(List): const ListConverterRule(),
     reflectClass(Model): const ModelToMapRule(),
   };
   
@@ -40,13 +40,24 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
     this.store = store;
   
   Map get converterRules => _converterRules;
+  
+  StoreCriteria newCriteria() => new HttpStoreCriteria();
 
   T toModel(Map result) => result == null ? null : model$.mapToInstance(result);
   Map instanceToStoreMapResult(Map result) => model$.instanceToMap(result);
   
   Future makeRequest(String method, Map params, dynamic data) {
+    print(params);
     if (params != null) {
-      params.forEach((k, v) => params[k] = JSON.encode(v));
+      params.forEach((k, v){
+        if (v != null) {
+          try{
+            params[k] = JSON.encode(v);
+          }catch(e){
+            throw new Exception('Unable to encode "$k": $e (value= $v)');
+          }
+        }
+      });
     }
     
     var uri = new Uri(
@@ -65,10 +76,10 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
     });
   }
   
-  Future<HttpCursor<T>> cursor([criteria])
+  Future<HttpCursor<T>> cursor([StoreCriteria criteria])
     => new Future.value(new HttpCursor(this, criteria));
-  Future<int> count([criteria]) => makeRequest('GET', { 'count': true, 'criteria': criteria }, null);
-  Future<List> distinct(String field, [criteria])
+  Future<int> count([StoreCriteria criteria]) => makeRequest('GET', { 'count': true, 'criteria': criteria }, null);
+  Future<List> distinct(String field, [StoreCriteria criteria])
     => makeRequest('get', { 'distinct': field, 'criteria': criteria }, null);
 
   
@@ -77,17 +88,17 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
   Future insertAll(List<Map> values)
     => makeRequest('PUT', null, [ false, values ]);
 
-  Future update(criteria, Map values)
+  Future update(StoreCriteria criteria, Map values)
     => makeRequest('POST', null, [ true, criteria, values ]);
-  Future updateOne(criteria, Map values) 
+  Future updateOne(StoreCriteria criteria, Map values) 
     => makeRequest('POST', null, [ false, criteria, values ]);
   
   Future save(Map values)
   => makeRequest('PUT', null, [ true, values ]);
   
-  Future remove(criteria)
+  Future remove(StoreCriteria criteria)
     => makeRequest('DELETE', null, [ true, criteria ]);
-  Future removeOne(criteria)
+  Future removeOne(StoreCriteria criteria)
     => makeRequest('DELETE', null, [ false, criteria ]);
   
 }

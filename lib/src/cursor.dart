@@ -16,8 +16,13 @@ class HttpCursor<T extends Model> extends StoreCursor<T> {
     => toList().then((List<T> models) => models.forEach(callback));
 
   Future<List<T>> toList() => (store as HttpStoreInstance)
-      .makeRequest('GET', { 'fields': fields, 'skip': skip, 'limit': limit, 'sort': sort }, null)
-      .then((List<Map> result) => result == null ? null : result.map(store.toModel).toList(growable: false));
+      .makeRequest('GET', {
+        'criteria': criteria,
+        'fields': fields,
+        'skip': skip, 'limit': limit,
+        'sort': sort
+      }, null).then((List<Map> result)
+          => result == null ? null : result.map(store.toModel).toList());
   
   Future close() => new Future.value();
 }
