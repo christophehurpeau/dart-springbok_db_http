@@ -1,9 +1,13 @@
 part of springbok_db_http;
 
 class HttpStoreCriteria extends StoreCriteria {
-  Map _criteria = {};
+  final Model$ _model$;
   
-  fromMap(Map map) => _criteria = map;
+  HttpStoreCriteria(this._model$);
   
-  toJson() => _criteria;
+  Map criteria = {};
+  
+  fromMap(Map map) => criteria = map;
+
+  toJson() => _model$.dataToStoreData(criteria);
 }

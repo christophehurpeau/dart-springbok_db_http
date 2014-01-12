@@ -32,6 +32,10 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
   static final Map _converterRules = {
     reflectClass(Model): const ModelToMapRule(),
   };
+  static final Map _mapToStoreMapConverterRules = {
+    reflectClass(Id): const IdToStringRule(),
+    reflectClass(IdString): const IdToStringRule(),
+  };
   
   final HttpStore store;
   
@@ -40,9 +44,13 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
     this.store = store;
   
   Map get converterRules => _converterRules;
+  Map<ClassMirror, ConverterRule> mapToStoreMapConverterRules = _mapToStoreMapConverterRules;
   
-  StoreCriteria newCriteria() => new HttpStoreCriteria();
+  StoreCriteria newCriteria() => new HttpStoreCriteria(model$);
 
+  StoreCriteria idToCriteria(Id id) => newCriteria()..fieldEqualsTo('id', id);
+  StoreCriteria idsToCriteria(Iterable<Id> ids) => newCriteria()..fieldInValues('id', ids);
+  
   T toModel(Map result) => result == null ? null : model$.mapToInstance(result);
   Map instanceToStoreMapResult(Map result) => model$.instanceToMap(result);
   
@@ -76,30 +84,48 @@ class HttpStoreInstance<T extends Model> extends AbstractStoreInstance<T> {
     });
   }
   
-  Future<HttpCursor<T>> cursor([StoreCriteria criteria])
-    => new Future.value(new HttpCursor(this, criteria));
-  Future<int> count([StoreCriteria criteria]) => makeRequest('GET', { 'count': true, 'criteria': criteria }, null);
-  Future<List> distinct(String field, [StoreCriteria criteria])
-    => makeRequest('get', { 'distinct': field, 'criteria': criteria }, null);
+  Future<HttpCursor<T>> cursor([StoreCriteria criteria]) {
+    return new Future.value(new HttpCursor(this, criteria));
+  }
+  
+  Future<int> count([StoreCriteria criteria]) {
+    return makeRequest('GET', { 'count': true, 'criteria': criteria }, null);
+  }
+  
+  Future<List> distinct(String field, [StoreCriteria criteria]) {
+    return makeRequest('get', { 'distinct': field, 'criteria': criteria }, null);
+  }
 
   
-  Future insert(Map values)
-    => makeRequest('PUT', null, [ false, values ]);
-  Future insertAll(List<Map> values)
-    => makeRequest('PUT', null, [ false, values ]);
+  Future insert(Map values) {
+    return makeRequest('PUT', null, [ false, values ]);
+  }
+  
+  Future insertAll(List<Map> values) {
+    return makeRequest('PUT', null, [ false, values ]);
+  }
 
-  Future update(StoreCriteria criteria, Map values)
-    => makeRequest('POST', null, [ true, criteria, values ]);
-  Future updateOne(StoreCriteria criteria, Map values) 
-    => makeRequest('POST', null, [ false, criteria, values ]);
   
-  Future save(Map values)
-  => makeRequest('PUT', null, [ true, values ]);
+  Future update(StoreCriteria criteria, Map values) {
+    return makeRequest('POST', null, [ true, criteria, values ]);
+  }
   
-  Future remove(StoreCriteria criteria)
-    => makeRequest('DELETE', null, [ true, criteria ]);
-  Future removeOne(StoreCriteria criteria)
-    => makeRequest('DELETE', null, [ false, criteria ]);
+  Future updateOne(StoreCriteria criteria, Map values) { 
+    return makeRequest('POST', null, [ false, criteria, values ]);
+  }
+  
+  Future save(Map values) {
+    return makeRequest('PUT', null, [ true, values ]);
+  }
+  
+  
+  Future remove(StoreCriteria criteria) {
+    return makeRequest('DELETE', null, [ true, criteria ]);
+  }
+  
+  Future removeOne(StoreCriteria criteria) {
+    return makeRequest('DELETE', null, [ false, criteria ]);
+  }
   
 }
 
